@@ -2,6 +2,8 @@
 import { Message } from 'node-telegram-bot-api';
 import MyTelegramBot from '../../bot';
 import { Database } from '../../db/db';
+import { DbWriter } from '../../db/db.writer.abstract';
+import { MyDbWriter } from '../../db/db.writer';
 
 
 export interface CommandHandler {
@@ -12,25 +14,22 @@ export class StartCommandHandler implements CommandHandler {
   async handle(bot: MyTelegramBot, msg: Message) {
     const response = 'Привет! Я - простейший Telegram бот. Введите /hello, чтобы получить приветственное сообщение.';
     bot.sendMessage(msg.chat.id, response);
+    console.log(msg);
+    // Сохраняем chatId в базе данных при получении команды /start
+    const dbWriter = new MyDbWriter(); // Используем MyDbWriter
+    dbWriter.on('queryExecuted', (executionTime) => {
+      console.log(`Время выполнения: ${executionTime} мс`);
+    });
+    await dbWriter.saveFieldToDatabase(msg.chat.id, 'chatId'); // Убираем 'usersInfo', так как это уже учитывается в MyDbWriter
 
-    // Сохраняем chatId в базу данных при получении команды /start
-    await this.saveChatIdToDatabase(msg.chat.id);
-  }
-
-  // Функция для сохранения chatId в базу данных
-  private async saveChatIdToDatabase(chatId: number) {
-    const db = new Database();
-    await db.connect();
-
-    try {
-      const collection = db.usersInfo;
-      const document = { chatId: chatId };
-      await collection.insertOne(document);
-      console.log(`ChatId ${chatId} успешно сохранен в базе данных.`);
-    } catch (error) {
-      console.error('Ошибка при сохранении chatId:', error);
-    } finally {
-      db.close(); // Закрываем соединение с базой данных
+    const isAdmin = await dbWriter.checkAdminStatus(msg.chat.id);
+    console.log(isAdmin);
+    if (isAdmin) {
+      // Делаем что-то для администратора
+      bot.sendMessage(msg.chat.id, 'Вы - администратор. Добро пожаловать в админ-панель.');
+    } else {
+      // Делаем что-то для обычного пользователя
+      bot.sendMessage(msg.chat.id, 'Вы - обычный пользователь.');
     }
   }
 }
@@ -50,6 +49,18 @@ export class HelloCommandHandler implements CommandHandler {
     bot.sendMessage(msg.chat.id, response);
     console.log('Получена команда /hello.');
     // Здесь можно добавить логику для обработки команды /hello
+  }
+}
+
+export class HelpCommandHandler implements CommandHandler {
+  handle(bot: MyTelegramBot, msg: Message) {
+    const response = 'Доступные команды:\n' +
+      '/start - Запустить бота\n' +
+      '/record - Записать голосовое сообщение\n' +
+      '/hello - Получить приветственное сообщение\n' +
+      '/help - Получить список доступных команд';
+    bot.sendMessage(msg.chat.id, response);
+    console.log('Получена команда /help.');
   }
 }
 

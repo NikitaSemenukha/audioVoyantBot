@@ -1,6 +1,13 @@
 // bot.ts
 import TelegramBot, { Message } from 'node-telegram-bot-api';
-import { StartCommandHandler, RecordCommandHandler, HelloCommandHandler, DefaultCommandHandler, CommandHandler } from './core/commands/commands.handler';
+import { 
+  StartCommandHandler, 
+  RecordCommandHandler, 
+  HelloCommandHandler, 
+  DefaultCommandHandler, 
+  CommandHandler, 
+  HelpCommandHandler 
+} from './core/commands/commands.handler';
 import { Database } from './db/db';
 
 // Загрузка переменных среды из файла .env
@@ -8,7 +15,9 @@ require('dotenv').config();
 
 // Ваш токен Telegram бота
 const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
-
+const dbName = process.env.DB_USERS;
+const url = process.env.DB_USERS_URL_CONNECT;
+    
 export default class MyTelegramBot {
   private bot: TelegramBot;
   private db: Database;
@@ -16,7 +25,12 @@ export default class MyTelegramBot {
   constructor() {
     if (telegramToken) {
       this.bot = new TelegramBot(telegramToken, { polling: true });
-      this.db = new Database();
+      if (!url) {
+        throw new Error('MongoDB URL is missing');
+      } else if (!dbName) {
+        throw new Error('MongoDB dbName is missing');
+      }
+      this.db = new Database(dbName, url);
       
       this.init();
     } else {
@@ -60,6 +74,8 @@ export default class MyTelegramBot {
         return new RecordCommandHandler();
       case '/hello':
         return new HelloCommandHandler();
+      case '/help':
+        return new HelpCommandHandler();
       default:
         return new DefaultCommandHandler();
     }

@@ -1,42 +1,46 @@
-// db.ts
-import { MongoClient, Db, Collection } from 'mongodb';
-
-const dbName = 'Users';
-const url = 'mongodb://localhost:27017';
+import { MongoClient, Db, Document, Collection } from 'mongodb';
+require('dotenv').config();
 
 export class Database {
   private client: MongoClient;
   private db: Db | null;
-  private isConnected: boolean; // Add a flag to track the connection status
+  private isConnected: boolean;
+  protected url: string | undefined;
+  protected dbName: string | undefined;
 
-  constructor() {
-    this.client = new MongoClient(url);
+  constructor(dbName: string, url: string) {
+    
+    this.url = url;
+    this.dbName = dbName;
+
+    this.client = new MongoClient(this.url);
     this.db = null;
-    this.isConnected = false; // Initialize the flag to false
+    this.isConnected = false;
+
   }
 
   async connect() {
     try {
       await this.client.connect();
-      this.db = this.client.db(dbName);
-      this.isConnected = true; // Set the flag to true after connecting
+      this.db = this.client.db(this.dbName);
+      this.isConnected = true;
       console.log('Connected to MongoDB');
     } catch (error) {
       console.error('Error connecting to MongoDB:', error);
     }
   }
 
-  get usersInfo(): Collection {
+  getCollection<T extends Document>(collectionName: string): Collection<T> {
     if (!this.db) {
       throw new Error('Database not connected');
     }
-    return this.db.collection('usersInfo');
+    return this.db.collection<T>(collectionName);
   }
 
   async close() {
-    if (this.isConnected) { // Use the isConnected flag to check the connection status
+    if (this.isConnected) {
       await this.client.close();
-      this.isConnected = false; // Set the flag to false after closing the connection
+      this.isConnected = false;
       console.log('Disconnected from MongoDB');
     }
   }
