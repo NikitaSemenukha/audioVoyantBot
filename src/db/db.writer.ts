@@ -1,3 +1,5 @@
+import { Filter } from "mongodb";
+import { UserInfo } from "./UserInfo/UserInfo.interface";
 import { DbWriter } from "./db.writer.abstract";
 import { config } from 'dotenv';
 
@@ -7,11 +9,15 @@ const adminChatId: number = Number(process.env.ADMIN_ID);
 
 export class MyDbWriter extends DbWriter<Document> {
 
-    protected getCollectionName(): string {
-      return 'usersInfo';
+  protected getCollectionName(): string {
+    return 'usersInfo';
+  }
+
+  public generateFilter(value: any): Filter<Document> {
+        return { 'id': value['id'] };
     }
 
-    async checkAdminStatus(chatId: number): Promise<boolean> {
+  async checkAdminStatus(chatId: number): Promise<boolean> {
       return chatId === adminChatId;
-    }
   }
+}

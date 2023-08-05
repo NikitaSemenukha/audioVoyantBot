@@ -4,6 +4,8 @@ import MyTelegramBot from '../../bot';
 import { Database } from '../../db/db';
 import { DbWriter } from '../../db/db.writer.abstract';
 import { MyDbWriter } from '../../db/db.writer';
+import { UsersInfoCollection } from '../../db/UserInfo/UserInfo.collection';
+import { UserInfo } from '../../db/UserInfo/UserInfo.interface';
 
 
 export interface CommandHandler {
@@ -12,27 +14,41 @@ export interface CommandHandler {
 
 export class StartCommandHandler implements CommandHandler {
   async handle(bot: MyTelegramBot, msg: Message) {
-    const response = 'Привет! Я - простейший Telegram бот. Введите /hello, чтобы получить приветственное сообщение.';
-    bot.sendMessage(msg.chat.id, response);
-    console.log(msg);
-    // Сохраняем chatId в базе данных при получении команды /start
-    const dbWriter = new MyDbWriter(); // Используем MyDbWriter
-    dbWriter.on('queryExecuted', (executionTime) => {
-      console.log(`Время выполнения: ${executionTime} мс`);
-    });
-    await dbWriter.saveFieldToDatabase(msg.chat.id, 'chatId'); // Убираем 'usersInfo', так как это уже учитывается в MyDbWriter
+      const response = 'Привет! Я - простейший Telegram бот. Введите /hello, чтобы получить приветственное сообщение.';
+      bot.sendMessage(msg.chat.id, response);
 
-    const isAdmin = await dbWriter.checkAdminStatus(msg.chat.id);
-    console.log(isAdmin);
-    if (isAdmin) {
-      // Делаем что-то для администратора
-      bot.sendMessage(msg.chat.id, 'Вы - администратор. Добро пожаловать в админ-панель.');
-    } else {
-      // Делаем что-то для обычного пользователя
-      bot.sendMessage(msg.chat.id, 'Вы - обычный пользователь.');
-    }
+      // Создаем экземпляр UsersInfoCollection, передавая экземпляр базы данных
+      const dbWriter = new MyDbWriter();
+    
+      const userInfo: UserInfo = {
+          id: msg.chat.id,
+          is_Admin: await dbWriter.checkAdminStatus(msg.chat.id), // Предположим, что у вас есть метод checkAdminStatus в вашей базе данных
+          is_bot: msg.from?.is_bot || false,
+          first_name: msg.from?.first_name || "",
+          username: msg.from?.username || "",
+          language_code: msg.from?.language_code || "",
+          regDate: msg?.date,
+          lastRestart: Math.floor(new Date().getTime() / 1000)
+      };
+
+      await dbWriter.saveFieldToDatabase(
+        userInfo, 
+        'data', 
+        () => dbWriter.generateFilter(userInfo.id), 
+        true
+    );
+      const isAdmin = userInfo.is_Admin;
+    
+      if (isAdmin) {
+          // Делаем что-то для администратора
+          bot.sendMessage(msg.chat.id, 'Вы - администратор. Добро пожаловать в админ-панель.');
+      } else {
+          // Делаем что-то для обычного пользователя
+          bot.sendMessage(msg.chat.id, 'Вы - обычный пользователь.');
+      }
   }
 }
+
 
 export class RecordCommandHandler implements CommandHandler {
   handle(bot: MyTelegramBot, msg: Message) {
