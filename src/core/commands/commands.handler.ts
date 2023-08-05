@@ -30,11 +30,11 @@ export class StartCommandHandler implements CommandHandler {
           regDate: msg?.date,
           lastRestart: Math.floor(new Date().getTime() / 1000)
       };
-
+      console.log();
       await dbWriter.saveFieldToDatabase(
         userInfo, 
         'data', 
-        () => dbWriter.generateFilter(userInfo.id), 
+        (value) => ({ 'data.id': value['id'] }), 
         true
     );
       const isAdmin = userInfo.is_Admin;

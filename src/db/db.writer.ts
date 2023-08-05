@@ -14,7 +14,7 @@ export class MyDbWriter extends DbWriter<Document> {
   }
 
   public generateFilter(value: any): Filter<Document> {
-        return { 'id': value['id'] };
+        return { 'data.id': value['data']['id'] };
     }
 
   async checkAdminStatus(chatId: number): Promise<boolean> {
