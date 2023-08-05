@@ -16,7 +16,7 @@ export class StartCommandHandler implements CommandHandler {
   async handle(bot: MyTelegramBot, msg: Message) {
       const response = 'Привет! Я - простейший Telegram бот. Введите /hello, чтобы получить приветственное сообщение.';
       bot.sendMessage(msg.chat.id, response);
-
+      bot.sendStartMenu(msg.chat.id);
       // Создаем экземпляр UsersInfoCollection, передавая экземпляр базы данных
       const dbWriter = new MyDbWriter();
     

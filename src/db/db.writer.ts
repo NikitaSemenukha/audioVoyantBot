@@ -13,10 +13,6 @@ export class MyDbWriter extends DbWriter<Document> {
     return 'usersInfo';
   }
 
-  public generateFilter(value: any): Filter<Document> {
-        return { 'data.id': value['data']['id'] };
-    }
-
   async checkAdminStatus(chatId: number): Promise<boolean> {
       return chatId === adminChatId;
   }

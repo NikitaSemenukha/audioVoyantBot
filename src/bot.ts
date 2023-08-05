@@ -1,5 +1,5 @@
 // bot.ts
-import TelegramBot, { Message } from 'node-telegram-bot-api';
+import TelegramBot, { Message, ReplyKeyboardMarkup } from 'node-telegram-bot-api';
 import { 
   StartCommandHandler, 
   RecordCommandHandler, 
@@ -40,16 +40,29 @@ export default class MyTelegramBot {
   }
 
   private async init() {
+    const me = await this.bot.getMe();
+    const botName = `@${me.username}`;
+    console.log(`Бот ${me.first_name} (${botName}) запущен.`);
 
-      const me = await this.bot.getMe();
-      const botName = `@${me.username}`;
-      console.log(`Бот ${me.first_name} (${botName}) запущен.`);
-  
-      // Отправляем команду /start автоматически
-      this.sendMessageToUser(me.id, '/start');
-  
-      this.bot.on('message', this.handleMessage.bind(this));
+    // Отправляем команду /start автоматически
+    this.sendMessageToUser(me.id, '/start');
+
+    this.bot.on('message', this.handleMessage.bind(this));
   }
+
+  public sendStartMenu(chatId: number) {
+    const options: ReplyKeyboardMarkup = {
+      keyboard: [
+        [{ text: '1' }, { text: '2' }, { text: '3' }],
+        [{ text: '4' }],
+      ],
+      resize_keyboard: true,
+    };
+
+    const message = 'Выберите действие:';
+    this.bot.sendMessage(chatId, message, { reply_markup: options });
+  }
+
 
   public sendMessage(chatId: number, message: string) {
     this.bot.sendMessage(chatId, message);
